@@ -114,8 +114,9 @@ validate_git_tag() {
 
 # Fallback to default git tag for development builds
 fallback_git_tag() {
+    package_version=$(node -p 'require("./package.json").version')
     if ! git_version=$(git describe --abbrev=0 --tags --match 'v[0-9]*.[0-9]*.[0-9]*' 2>/dev/null); then
-        git_version_clean=$(node -p 'require("./package.json").version')
+        git_version_clean=$package_version
         return
     fi
 
@@ -123,7 +124,12 @@ fallback_git_tag() {
     if [[ "$git_version_clean" =~ ^([0-9]+\.[0-9]+\.[0-9]+)([-+][0-9A-Za-z.-]+)?$ ]]; then
         git_version_clean=${BASH_REMATCH[1]}
     else
-        git_version_clean=$(node -p 'require("./package.json").version')
+        git_version_clean=$package_version
+    fi
+
+    if [[ "$git_version_clean" != "$package_version" ]]; then
+        log_warning "Git tag ${git_version} does not match package.json ${package_version}; using package.json for development builds"
+        git_version_clean=$package_version
     fi
 }
 
